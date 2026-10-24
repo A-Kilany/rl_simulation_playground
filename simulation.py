@@ -25,7 +25,14 @@ COLORS = {
     'blue': (92, 169, 255), 'green': (80, 217, 154), 'red': (255, 108, 126),
     'yellow': (255, 207, 112), 'wall': (86, 96, 112),
 }
-ARROWS = {'NORTH': '↑', 'SOUTH': '↓', 'WEST': '←', 'EAST': '→', 'NORTHEAST': '↗', 'NORTHWEST': '↖', 'SOUTHEAST': '↘', 'SOUTHWEST': '↙'}
+ARROWS = {'NORTH': 'c', 
+'SOUTH': 'd', 
+'WEST': 'b', 
+'EAST': 'a', 
+'NORTHEAST': 'g', 
+'NORTHWEST': 'e', 
+'SOUTHEAST': 'h', 
+'SOUTHWEST': 'f'}
 DELTAS = {'NORTH': (-1, 0), 'SOUTH': (1, 0), 'WEST': (0, -1), 'EAST': (0, 1), 'NORTHEAST': (-1, 1), 'NORTHWEST': (-1, -1), 'SOUTHEAST': (1, 1), 'SOUTHWEST': (1, -1)}
 
 
@@ -252,7 +259,7 @@ def main():
         title_font = pygame.font.SysFont('arial', max(19, min(29, w // 35)), bold=True)
         small = pygame.font.SysFont('arial', max(12, min(15, w // 85)))
         info_font = pygame.font.SysFont('arial', max(12, min(17, w // 75)))
-        arrow_font = pygame.font.SysFont('dejavusans', max(9, min(33, int(cw * 0.62))), bold=True)
+        arrow_font = pygame.font.Font('./arrows/Arrows.otf', max(9, min(33, int(cw * 0.62))))
         cell_font = pygame.font.SysFont('arial', max(9, min(14, cw // 5)))
         draw_text(screen, title_font, 'ROBOT IN A ROOM', (layout['margin'], 19))
         if h >= 600:
