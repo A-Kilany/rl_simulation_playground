@@ -260,7 +260,7 @@ def main():
         small = pygame.font.SysFont('arial', max(12, min(15, w // 85)))
         info_font = pygame.font.SysFont('arial', max(12, min(17, w // 75)))
         arrow_font = pygame.font.Font('./arrows/Arrows.otf', max(9, min(33, int(cw * 0.62))))
-        cell_font = pygame.font.SysFont('arial', max(9, min(14, cw // 5)))
+        cell_font = pygame.font.SysFont('arial', max(12, min(17, cw // 5)))
         draw_text(screen, title_font, 'ROBOT IN A ROOM', (layout['margin'], 19))
         if h >= 600:
             draw_text(screen, small, 'Policy iteration  |  stochastic 80/10/10 movement  |  grid: %s x %s' % (ROWS, COLS),
@@ -286,7 +286,7 @@ def main():
                         screen.blit(label, label.get_rect(center=rect.center))
                 elif s in (GOAL, TRAP):
                     if cw >= 19:
-                        label = arrow_font.render('+10' if s == GOAL else '-10', True,
+                        label = cell_font.render('+10' if s == GOAL else '-10', True,
                                                   COLORS['green'] if s == GOAL else COLORS['red'])
                         screen.blit(label, label.get_rect(center=rect.center))
                 else:
