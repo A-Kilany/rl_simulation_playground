@@ -13,7 +13,8 @@ import sys
 import pygame
 from environment import (
     Environment, STATES, ACTIONS, TERMINAL_STATES,
-    ROWS, COLS, WALLS, GOAL, TRAP, START,
+    ROWS, COLS, WALLS, GRASS, KEY,
+    GOAL, TRAP, START,
 )
 
 GAMMA = 0.9
@@ -23,7 +24,15 @@ COLORS = {
     'bg': (13, 18, 31), 'panel': (22, 30, 47), 'cell': (137, 149, 170),
     'line': (62, 79, 103), 'text': (231, 237, 249), 'muted': (149, 164, 188), 'grey': (128, 128, 128),
     'blue': (92, 169, 255), 'black': (0, 0, 0), 'green': (80, 217, 154), 'red': (255, 108, 126),
-    'yellow': (255, 207, 112), 'wall': (10, 60, 10),
+    'yellow': (255, 207, 112), 'wall': (10, 60, 10), 'path': (172, 153, 113),
+    'grass_short': (115, 173, 91),
+    'grass_medium': (67, 132, 65),
+    'grass_tall': (29, 91, 43),
+    'hedge': (18, 77, 34),
+    'hedge_detail': (35, 110, 49),
+    'fire': (255, 94, 35),
+    'door': (125, 81, 48),
+    'gold': (255, 212, 65),
 }
 ARROWS = {'NORTH': 'c', 
 'SOUTH': 'd', 
@@ -271,14 +280,82 @@ def main():
             for c in range(COLS):
                 s = (r, c)
                 rect = pygame.Rect(x0 + c * (cw + gap), y0 + r * (cw + gap), cw, cw)
-                color = COLORS['cell']
+                # Garden ground and grass
+                color = COLORS['path']
+                grass_type = GRASS.get(s)
+                if grass_type:
+                    color = COLORS[f'grass_{grass_type}']
+                # Hedges and special locations take priority
                 if s in WALLS:
-                    color = COLORS['wall']
+                    color = COLORS['hedge']
                 elif s == GOAL:
-                    color = (30, 98, 78)
+                    color = COLORS['door']
                 elif s == TRAP:
-                    color = (112, 49, 68)
+                    color = COLORS['fire']
                 pygame.draw.rect(screen, color, rect)
+                # Hedge highlights
+                if s in WALLS and cw >= 12:
+                    pygame.draw.circle(
+                        screen,
+                        COLORS['hedge_detail'],
+                        rect.center,
+                        max(2, cw // 4)
+                    )
+                # Grass texture
+                elif s in GRASS and cw >= 14:
+                    pygame.draw.line(
+                        screen,
+                        (185, 215, 122),
+                        (rect.centerx - 3, rect.centery + 3),
+                        (rect.centerx, rect.centery - 4),
+                        1
+                    )
+                    pygame.draw.line(
+                        screen,
+                        (185, 215, 122),
+                        (rect.centerx, rect.centery + 3),
+                        (rect.centerx + 3, rect.centery - 2),
+                        1
+                    )
+                # Golden collectible key
+                if s == KEY and cw >= 12:
+                    pygame.draw.circle(
+                        screen, COLORS['gold'],
+                        (rect.centerx - 3, rect.centery - 2),
+                        max(2, cw // 6), 2
+                    )
+                    pygame.draw.line(
+                        screen, COLORS['gold'],
+                        (rect.centerx, rect.centery),
+                        (rect.centerx + cw // 4, rect.centery + cw // 4),
+                        max(1, cw // 10)
+                    )
+                # Door
+                if s == GOAL and cw >= 12:
+                    door = rect.inflate(-cw // 3, -cw // 5)
+                    pygame.draw.rect(
+                        screen, (76, 46, 28), door,
+                        border_radius=max(1, cw // 12)
+                    )
+                    pygame.draw.circle(
+                        screen, COLORS['gold'],
+                        (door.right - max(2, cw // 8), door.centery),
+                        max(1, cw // 20)
+                    )
+                # Fire pit
+                if s == TRAP and cw >= 12:
+                    pygame.draw.circle(
+                        screen, (75, 49, 42),
+                        rect.center, max(3, cw // 3)
+                    )
+                    pygame.draw.circle(
+                        screen, (255, 125, 35),
+                        rect.center, max(2, cw // 5)
+                    )
+                    pygame.draw.circle(
+                        screen, (255, 220, 75),
+                        rect.center, max(1, cw // 10)
+                    )
                 if cw >= 12:
                     pygame.draw.rect(screen, COLORS['line'], rect, 1)
                 if s in WALLS:
@@ -290,6 +367,8 @@ def main():
                         label = cell_font.render('+10' if s == GOAL else '-10', True,
                                                   COLORS['green'] if s == GOAL else COLORS['red'])
                         screen.blit(label, label.get_rect(center=rect.center))
+                elif s == KEY:
+                    pass
                 else:
                     if cw >= 13:
                         arrow = arrow_font.render(ARROWS[policy[s]], True, COLORS['grey'])

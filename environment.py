@@ -5,101 +5,259 @@ import random
 # 1. STATE SPACE: S and ACTIONS: A
 # ============================================================
 
-ROWS = 20
-COLS = 20
+ROWS = 32
+COLS = 32
 
-START = (19, 0)
-GOAL = (0, 19)
-TRAP = (18, 19)
+START = (30, 1)
+GOAL = (1, 30)
+FIRE = (27, 27)
+KEY = (16, 15)
 
-def generate_maze():
-    rng = random.Random()
+TRAP = FIRE
 
-    # Begin with every cell blocked.
-    walls = {
-        (r, c)
-        for r in range(ROWS)
-        for c in range(COLS)
-    }
+VISION_RADIUS = 3
 
-    # Recursive backtracking, implemented iteratively.
-    # Carve corridors between cells two spaces apart.
-    stack = [(1, 1)]
-    walls.remove((1, 1))
+STEP_REWARD = -0.04
 
-    directions = [
-        (-2, 0), (2, 0),
-        (0, -2), (0, 2)
-    ]
+GRASS_REWARDS = {
+    "short": -0.01,
+    "medium": -0.06,
+    "tall": -0.15
+}
 
-    while stack:
-        r, c = stack[-1]
-        rng.shuffle(directions)
+def generate_garden(seed=42):
 
-        neighbors = []
+    rng = random.Random(seed)
 
-        for dr, dc in directions:
-            nr, nc = r + dr, c + dc
+    walls = set()
+    grass = {}
+
+    # --------------------------------------------------------
+    # A. CREATE GARDEN BOUNDARIES
+    # --------------------------------------------------------
+
+    for r in range(ROWS):
+        walls.add((r, 0))
+        walls.add((r, COLS - 1))
+
+    for c in range(COLS):
+        walls.add((0, c))
+        walls.add((ROWS - 1, c))
+
+    # --------------------------------------------------------
+    # B. GENERATE RANDOM HEDGES
+    # --------------------------------------------------------
+    #
+    # Each hedge is a horizontal or vertical line.
+    # Their lengths and positions are randomized.
+
+    for _ in range(55):
+
+        r = rng.randint(2, ROWS - 3)
+        c = rng.randint(2, COLS - 3)
+
+        length = rng.randint(2, 7)
+
+        horizontal = rng.choice([True, False])
+
+        for i in range(length):
+
+            if horizontal:
+                cell = (r, c + i)
+            else:
+                cell = (r + i, c)
 
             if (
-                1 <= nr < ROWS - 1
-                and 1 <= nc < COLS - 1
-                and (nr, nc) in walls
+                1 <= cell[0] < ROWS - 1
+                and 1 <= cell[1] < COLS - 1
             ):
-                neighbors.append((nr, nc, dr, dc))
+                walls.add(cell)
 
-        if neighbors:
-            nr, nc, dr, dc = neighbors[0]
+    # --------------------------------------------------------
+    # C. GENERATE BUSH CLUSTERS
+    # --------------------------------------------------------
+    #
+    # Small irregular obstacles make the garden feel
+    # less artificial than perfectly straight walls.
 
-            # Open the destination and connecting corridor.
-            walls.remove((nr, nc))
-            walls.remove((r + dr // 2, c + dc // 2))
+    for _ in range(45):
 
-            stack.append((nr, nc))
-        else:
-            stack.pop()
+        r = rng.randint(2, ROWS - 3)
+        c = rng.randint(2, COLS - 3)
 
-    # Connect the start to the maze.
-    for cell in [START, (19, 1), (18, 1)]:
+        cluster_size = rng.randint(2, 5)
+
+        for _ in range(cluster_size):
+
+            dr = rng.randint(-1, 1)
+            dc = rng.randint(-1, 1)
+
+            cell = (r + dr, c + dc)
+
+            if (
+                1 <= cell[0] < ROWS - 1
+                and 1 <= cell[1] < COLS - 1
+            ):
+                walls.add(cell)
+
+    # --------------------------------------------------------
+    # D. GUARANTEE A PATH THROUGH THE GARDEN
+    # --------------------------------------------------------
+    #
+    # Carve randomized Manhattan paths:
+    #
+    # START -> KEY
+    # KEY   -> GOAL
+    #
+    # These paths guarantee that a robot can reach
+    # the key and subsequently reach the door.
+
+    protected_path = set()
+
+    def carve_path(origin, destination):
+
+        r, c = origin
+        protected_path.add((r, c))
+        walls.discard((r, c))
+
+        while (r, c) != destination:
+
+            choices = []
+
+            if r < destination[0]:
+                choices.append((r + 1, c))
+            elif r > destination[0]:
+                choices.append((r - 1, c))
+
+            if c < destination[1]:
+                choices.append((r, c + 1))
+            elif c > destination[1]:
+                choices.append((r, c - 1))
+
+            # Randomly choose one valid step toward the target.
+            r, c = rng.choice(choices)
+
+            walls.discard((r, c))
+            protected_path.add((r, c))
+
+    carve_path(START, KEY)
+    carve_path(KEY, GOAL)
+
+    # --------------------------------------------------------
+    # E. OPEN ADDITIONAL GARDEN PASSAGES
+    # --------------------------------------------------------
+    #
+    # Remove some hedge cells to create alternative paths.
+
+    removable = list(
+        walls - protected_path - {
+            (r, c)
+            for r in range(ROWS)
+            for c in range(COLS)
+            if r in (0, ROWS - 1)
+            or c in (0, COLS - 1)
+        }
+    )
+
+    rng.shuffle(removable)
+
+    for cell in removable[:65]:
         walls.discard(cell)
 
-    # Connect the goal to the maze.
-    for cell in [GOAL, (1, 19), (0, 18)]:
-        walls.discard(cell)
+    # --------------------------------------------------------
+    # F. CREATE GRASS FIELDS
+    # --------------------------------------------------------
+    #
+    # Grass fields are patches, not single random cells.
+    #
+    # Each field has an associated negative reward.
+    #
+    # R(s,a,s') depends on the terrain at s'.
 
-    # Place the trap on an accessible side branch.
-    for cell in [TRAP, (17, 19), (17, 18)]:
-        walls.discard(cell)
+    for _ in range(28):
 
-    # Add some loops to create alternative routes.
-    candidates = [
-        (r, c)
-        for r in range(1, ROWS - 1)
-        for c in range(1, COLS - 1)
-        if (r, c) in walls
-        and (
-            (r % 2 == 0 and c % 2 == 1)
-            or (r % 2 == 1 and c % 2 == 0)
+        r = rng.randint(1, ROWS - 5)
+        c = rng.randint(1, COLS - 5)
+
+        height = rng.randint(2, 5)
+        width = rng.randint(2, 5)
+
+        grass_type = rng.choice(
+            ["short", "medium", "tall"]
         )
+
+        for dr in range(height):
+            for dc in range(width):
+
+                cell = (r + dr, c + dc)
+
+                if (
+                    cell not in walls
+                    and cell not in (START, KEY, GOAL)
+                ):
+                    grass[cell] = grass_type
+
+    # --------------------------------------------------------
+    # G. PLACE THE FIRE PIT
+    # --------------------------------------------------------
+    #
+    # Place the fire pit on an accessible tile near
+    # the bottom-right, away from the guaranteed route.
+    #
+    # FIRE terminates the episode with a negative reward.
+
+    fire_candidates = [
+        (r, c)
+        for r in range(22, ROWS - 1)
+        for c in range(22, COLS - 1)
+        if (r, c) not in walls
+        and (r, c) not in protected_path
+        and (r, c) not in (START, KEY, GOAL)
     ]
 
-    rng.shuffle(candidates)
+    fire = (
+        rng.choice(fire_candidates)
+        if fire_candidates
+        else FIRE
+    )
 
-    for cell in candidates[:18]:
-        walls.remove(cell)
+    walls.discard(fire)
+    grass.pop(fire, None)
 
-    return sorted(walls)
+    return walls, grass, fire
 
 
-WALLS = generate_maze()
+# ============================================================
+# 3. INITIALIZE THE WORLD
+# ============================================================
 
-TERMINAL_STATES = {GOAL, TRAP}
+WALLS, GRASS, FIRE = generate_garden(seed=42)
+
+# Keep TRAP as an alias for older simulation code.
+TRAP = FIRE
+
+# Terminal positions.
+#
+# IMPORTANT:
+# GOAL terminates only if the robot possesses the key.
+# FIRE always terminates the episode.
+#
+# This set identifies special terminal locations;
+# the actual terminal condition is checked later.
+
+TERMINAL_STATES = {GOAL, FIRE}
 
 STATES = {
     (r, c)
     for r in range(ROWS)
     for c in range(COLS)
     if (r, c) not in WALLS
+}
+
+RL_STATES = {
+    (r, c, has_key)
+    for r, c in STATES
+    for has_key in (False, True)
 }
 
 ACTIONS = {
