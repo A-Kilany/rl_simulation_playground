@@ -13,7 +13,7 @@ import sys
 import pygame
 from environment import (
     Environment, STATES, ACTIONS, TERMINAL_STATES,
-    ROWS, COLS, WALL, GOAL, TRAP, START,
+    ROWS, COLS, WALLS, GOAL, TRAP, START,
 )
 
 GAMMA = 0.9
@@ -264,7 +264,7 @@ def main():
                 s = (r, c)
                 rect = pygame.Rect(x0 + c * (cw + gap), y0 + r * (cw + gap), cw, cw)
                 color = COLORS['cell']
-                if s == WALL:
+                if s in WALLS:
                     color = COLORS['wall']
                 elif s == GOAL:
                     color = (30, 98, 78)
@@ -273,7 +273,7 @@ def main():
                 pygame.draw.rect(screen, color, rect)
                 if cw >= 12:
                     pygame.draw.rect(screen, COLORS['line'], rect, 1)
-                if s == WALL:
+                if s in WALLS:
                     if cw >= 52:
                         label = cell_font.render('WALL', True, COLORS['text'])
                         screen.blit(label, label.get_rect(center=rect.center))

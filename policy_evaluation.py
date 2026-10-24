@@ -26,7 +26,7 @@ from environment import (
     TERMINAL_STATES,
     ROWS,
     COLS,
-    WALL,
+    WALLS,
     GOAL,
     TRAP
 )
@@ -289,7 +289,7 @@ for r in range(ROWS):
 
         state = (r, c)
 
-        if state == WALL:
+        if state in WALLS:
             row_values.append("  WALL  ")
 
         elif state == GOAL:

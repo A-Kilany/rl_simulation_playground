@@ -39,7 +39,7 @@ from environment import (
     TERMINAL_STATES,
     ROWS,
     COLS,
-    WALL,
+    WALLS,
     GOAL,
     TRAP,
     START
@@ -319,7 +319,7 @@ def print_values(values):
 
             state = (r, c)
 
-            if state == WALL:
+            if state in WALLS:
                 cell = "  WALL  "
 
             elif state == GOAL:
@@ -348,7 +348,7 @@ def print_policy(policy):
 
             state = (r, c)
 
-            if state == WALL:
+            if state in WALLS:
                 cell = " ■ "
 
             elif state == GOAL:

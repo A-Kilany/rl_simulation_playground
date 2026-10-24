@@ -8,7 +8,7 @@ import random
 ROWS = 20
 COLS = 20
 
-WALL = (10, 10)
+WALLS = [(10, 10), (11, 11), (12, 12), (13, 13), (14, 14), (15, 15), (16, 16), (17, 17), (18, 18), (19, 19)]
 GOAL = (0, 19)
 TRAP = (1, 19)
 START = (19, 0)
@@ -19,7 +19,7 @@ STATES = {
     (r, c)
     for r in range(ROWS)
     for c in range(COLS)
-    if (r, c) != WALL
+    if (r, c) not in WALLS
 }
 
 ACTIONS = {
