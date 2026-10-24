@@ -8,31 +8,90 @@ import random
 ROWS = 20
 COLS = 20
 
-WALLS = [
-    (0, 0), (0, 1),
-    (1, 1), (1, 2),
-    (2, 2), (2, 3),
-    # (3, 3), (3, 4),
-    (4, 4), (4, 5),
-    (5, 5), (5, 6),
-    (6, 6), (6, 7),
-    (7, 7), (7, 8),
-    (8, 8), (8, 9),
-    (9, 9), (9, 10),
-    (10, 10), (10, 11),
-    (11, 11), (11, 12),
-    (12, 12), (12, 13),
-    (13, 13), (13, 14),
-    (14, 14), (14, 15),
-    (15, 15), (15, 16),
-    (16, 16), (16, 17),
-    (17, 17), (17, 18),
-    (18, 18), (18, 19),
-    (19, 19), 
-]
-GOAL = (0, 19)
-TRAP = (1, 19)
 START = (19, 0)
+GOAL = (0, 19)
+TRAP = (18, 19)
+
+def generate_maze():
+    rng = random.Random()
+
+    # Begin with every cell blocked.
+    walls = {
+        (r, c)
+        for r in range(ROWS)
+        for c in range(COLS)
+    }
+
+    # Recursive backtracking, implemented iteratively.
+    # Carve corridors between cells two spaces apart.
+    stack = [(1, 1)]
+    walls.remove((1, 1))
+
+    directions = [
+        (-2, 0), (2, 0),
+        (0, -2), (0, 2)
+    ]
+
+    while stack:
+        r, c = stack[-1]
+        rng.shuffle(directions)
+
+        neighbors = []
+
+        for dr, dc in directions:
+            nr, nc = r + dr, c + dc
+
+            if (
+                1 <= nr < ROWS - 1
+                and 1 <= nc < COLS - 1
+                and (nr, nc) in walls
+            ):
+                neighbors.append((nr, nc, dr, dc))
+
+        if neighbors:
+            nr, nc, dr, dc = neighbors[0]
+
+            # Open the destination and connecting corridor.
+            walls.remove((nr, nc))
+            walls.remove((r + dr // 2, c + dc // 2))
+
+            stack.append((nr, nc))
+        else:
+            stack.pop()
+
+    # Connect the start to the maze.
+    for cell in [START, (19, 1), (18, 1)]:
+        walls.discard(cell)
+
+    # Connect the goal to the maze.
+    for cell in [GOAL, (1, 19), (0, 18)]:
+        walls.discard(cell)
+
+    # Place the trap on an accessible side branch.
+    for cell in [TRAP, (17, 19), (17, 18)]:
+        walls.discard(cell)
+
+    # Add some loops to create alternative routes.
+    candidates = [
+        (r, c)
+        for r in range(1, ROWS - 1)
+        for c in range(1, COLS - 1)
+        if (r, c) in walls
+        and (
+            (r % 2 == 0 and c % 2 == 1)
+            or (r % 2 == 1 and c % 2 == 0)
+        )
+    ]
+
+    rng.shuffle(candidates)
+
+    for cell in candidates[:18]:
+        walls.remove(cell)
+
+    return sorted(walls)
+
+
+WALLS = generate_maze()
 
 TERMINAL_STATES = {GOAL, TRAP}
 

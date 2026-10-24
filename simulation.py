@@ -20,10 +20,10 @@ GAMMA = 0.9
 TOLERANCE = 1e-9
 FPS = 240
 COLORS = {
-    'bg': (13, 18, 31), 'panel': (22, 30, 47), 'cell': (37, 49, 70),
-    'line': (62, 79, 103), 'text': (231, 237, 249), 'muted': (149, 164, 188),
+    'bg': (13, 18, 31), 'panel': (22, 30, 47), 'cell': (137, 149, 170),
+    'line': (62, 79, 103), 'text': (231, 237, 249), 'muted': (149, 164, 188), 'grey': (128, 128, 128),
     'blue': (92, 169, 255), 'black': (0, 0, 0), 'green': (80, 217, 154), 'red': (255, 108, 126),
-    'yellow': (255, 207, 112), 'wall': (86, 96, 112),
+    'yellow': (255, 207, 112), 'wall': (10, 60, 10),
 }
 ARROWS = {'NORTH': 'c', 
 'SOUTH': 'd', 
@@ -292,7 +292,7 @@ def main():
                         screen.blit(label, label.get_rect(center=rect.center))
                 else:
                     if cw >= 13:
-                        arrow = arrow_font.render(ARROWS[policy[s]], True, COLORS['blue'])
+                        arrow = arrow_font.render(ARROWS[policy[s]], True, COLORS['grey'])
                         screen.blit(arrow, arrow.get_rect(center=rect.center))
                     if show_values and cw >= 64:
                         label = cell_font.render(f'{values[s]:.2f}', True, COLORS['muted'])
