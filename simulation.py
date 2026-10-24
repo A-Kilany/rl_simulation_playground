@@ -18,7 +18,7 @@ from environment import (
 
 GAMMA = 0.9
 TOLERANCE = 1e-9
-FPS = 60
+FPS = 240
 COLORS = {
     'bg': (13, 18, 31), 'panel': (22, 30, 47), 'cell': (37, 49, 70),
     'line': (62, 79, 103), 'text': (231, 237, 249), 'muted': (149, 164, 188),
@@ -155,7 +155,7 @@ def main():
     paused = False
     show_values = False  # In a large grid, values would otherwise clutter every cell.
     show_coords = False
-    speed = 5.0
+    speed = 1.0
     episode = 1
     steps = 0
     cumulative = 0.0
@@ -216,13 +216,13 @@ def main():
 
         if not paused:
             if moving:
-                elapsed += dt * speed
+                elapsed += dt * speed * 5
                 if elapsed >= duration:
                     elapsed = duration
                     moving = False
                     state = target_state
             elif env.done:
-                episode_rest += dt * speed
+                episode_rest += dt * speed * 5
                 if episode_rest >= 1.3:
                     episode += 1
                     reset_episode()
