@@ -91,7 +91,7 @@ def calculate_layout(size):
     panel_gap = max(12, margin)
     available_w = w - 2 * margin - panel_width - panel_gap
     available_h = h - header - footer - margin
-    gap = 2 if max(ROWS, COLS) >= 15 else 4
+    gap = 0
     cell = max(1, int(min(
         (available_w - gap * (COLS - 1)) / COLS,
         (available_h - gap * (ROWS - 1)) / ROWS,
@@ -270,9 +270,9 @@ def main():
                     color = (30, 98, 78)
                 elif s == TRAP:
                     color = (112, 49, 68)
-                pygame.draw.rect(screen, color, rect, border_radius=min(6, cw // 5))
+                pygame.draw.rect(screen, color, rect)
                 if cw >= 12:
-                    pygame.draw.rect(screen, COLORS['line'], rect, 1, border_radius=min(6, cw // 5))
+                    pygame.draw.rect(screen, COLORS['line'], rect, 1)
                 if s == WALL:
                     if cw >= 52:
                         label = cell_font.render('WALL', True, COLORS['text'])
