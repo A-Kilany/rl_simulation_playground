@@ -11,7 +11,7 @@ COLS = 32
 START = (30, 1)
 GOAL = (1, 30)
 FIRE = (27, 27)
-KEY = (16, 15)
+KEY = (29, 1)
 
 TRAP = FIRE
 
@@ -372,6 +372,14 @@ class Environment:
         # Otherwise, the robot remains at s
         return state
 
+
+    def remove_key(self):
+        """
+        Remove the key from the environment.
+        This is called when the robot collects the key.
+        """
+        global KEY
+        KEY = (-1, -1)
 
     # --------------------------------------------------------
     # 7. TRANSITION MODEL: P(s' | s,a)

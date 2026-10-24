@@ -13,7 +13,7 @@ import sys
 import pygame
 from environment import (
     Environment, STATES, ACTIONS, TERMINAL_STATES,
-    ROWS, COLS, WALLS, GRASS, KEY,
+    ROWS, COLS, WALLS, GRASS, KEY, RL_STATES,
     GOAL, TRAP, START,
 )
 
@@ -123,6 +123,7 @@ def main():
     show_values = False  # In a large grid, values would otherwise clutter every cell.
     show_coords = False
     speed = 1.0
+    has_key = False
     episode = 1
     steps = 0
     cumulative = 0.0
@@ -237,6 +238,9 @@ def main():
                 old = state
                 next_state, reward, done = env.step(action)
                 last_action = action
+                if next_state == KEY:
+                    has_key = True
+                    env.remove_key()
                 if next_state == old:
                     last_direction = 'Stayed (blocked)'
                     blocked_count += 1
