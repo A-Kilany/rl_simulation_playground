@@ -22,7 +22,7 @@ FPS = 60
 COLORS = {
     'bg': (13, 18, 31), 'panel': (22, 30, 47), 'cell': (37, 49, 70),
     'line': (62, 79, 103), 'text': (231, 237, 249), 'muted': (149, 164, 188),
-    'blue': (92, 169, 255), 'green': (80, 217, 154), 'red': (255, 108, 126),
+    'blue': (92, 169, 255), 'black': (0, 0, 0), 'green': (80, 217, 154), 'red': (255, 108, 126),
     'yellow': (255, 207, 112), 'wall': (86, 96, 112),
 }
 ARROWS = {'NORTH': 'c', 
@@ -144,6 +144,7 @@ def main():
     clock = pygame.time.Clock()
 
     env = Environment()
+    robot_img = pygame.image.load('robot.webp').convert_alpha()
     policy, values, history = solve_policy_iteration(env)
     state = env.reset()
     start_state = state
@@ -309,17 +310,14 @@ def main():
         current_pos = interpolate(cell_center(start_state, layout),
                                   cell_center(target_state, layout),
                                   elapsed / duration) if moving else cell_center(state, layout)
+
         px, py = round(current_pos[0]), round(current_pos[1])
-        radius = max(2, min(18, int(cw * 0.37)))
-        pygame.draw.circle(screen, (12, 24, 42), (px + 2, py + 2), radius + 2)
-        pygame.draw.circle(screen, COLORS['yellow'], (px, py), radius)
-        if radius >= 9:
-            eye = max(1, radius // 7)
-            pygame.draw.circle(screen, (29, 38, 55), (px - radius // 3, py - radius // 5), eye)
-            pygame.draw.circle(screen, (29, 38, 55), (px + radius // 3, py - radius // 5), eye)
-            pygame.draw.arc(screen, (29, 38, 55),
-                            (px - radius // 2, py - radius // 4, radius, radius),
-                            0.2, math.pi - 0.2, max(1, radius // 8))
+        robot_size = max(4, int(cw * 0.8))
+        robot_scaled = pygame.transform.smoothscale(
+            robot_img, (robot_size, robot_size)
+        )
+        robot_rect = robot_scaled.get_rect(center=(px, py))
+        screen.blit(robot_scaled, robot_rect)
 
         panel_x = layout['panel_x']
         panel_w = layout['panel_width']
