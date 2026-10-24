@@ -51,7 +51,7 @@ def solve_policy_iteration(env):
     values = {s: 0.0 for s in states}
     history = []
 
-    for outer in range(100):
+    for outer in range(2):
         # Bellman expectation update for deterministic policy π:
         # V_(k+1)(s) = Q_k(s, π(s))
         for sweep in range(10000):
@@ -162,6 +162,7 @@ def main():
     discounted = 0.0
     last_action = '—'
     last_direction = '—'
+    blocked_count = 0
     last_reward = 0.0
     outcome = 'Navigating'
     trail = [state]
@@ -222,6 +223,7 @@ def main():
                     moving = False
                     state = target_state
             elif env.done:
+                blocked_count = 0
                 episode_rest += dt * speed * 5
                 if episode_rest >= 1.3:
                     episode += 1
@@ -233,7 +235,13 @@ def main():
                 last_action = action
                 if next_state == old:
                     last_direction = 'Stayed (blocked)'
+                    blocked_count += 1
+                    if blocked_count > 5:
+                        env.done = True
+                        outcome = 'TRAP REACHED'
+                        continue
                 else:
+                    blocked_count = 0
                     last_direction = next(
                         direction for direction, (dr, dc) in DELTAS.items()
                         if (old[0] + dr, old[1] + dc) == next_state
