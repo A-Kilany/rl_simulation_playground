@@ -43,51 +43,6 @@ def q_value(env, state, action, values):
         for probability, next_state, reward in env.transitions(state, action)
     )
 
-
-def solve_policy_iteration(env):
-    """Alternate Bellman policy evaluation and greedy policy improvement."""
-    states = sorted(STATES)
-    policy = {s: 'NORTH' for s in states if s not in TERMINAL_STATES}
-    values = {s: 0.0 for s in states}
-    history = []
-
-    for outer in range(2):
-        # Bellman expectation update for deterministic policy π:
-        # V_(k+1)(s) = Q_k(s, π(s))
-        for sweep in range(10000):
-            updated = values.copy()
-            for s in policy:
-                updated[s] = q_value(env, s, policy[s], values)
-            delta = max(abs(updated[s] - values[s]) for s in states)
-            values = updated
-            if delta < TOLERANCE:
-                break
-
-        # Greedy policy improvement: π_new(s) = argmax_a Q^π(s,a)
-        changes = 0
-        improved = policy.copy()
-        for s in policy:
-            scores = {a: q_value(env, s, a, values) for a in ACTIONS}
-            best = max(scores, key=scores.get)
-            improved[s] = best
-            changes += (best != policy[s])
-        policy = improved
-        history.append((outer + 1, sweep + 1, changes))
-        if changes == 0:
-            break
-
-    # Evaluate final policy again so its displayed values match it.
-    for _ in range(10000):
-        updated = values.copy()
-        for s in policy:
-            updated[s] = q_value(env, s, policy[s], values)
-        delta = max(abs(updated[s] - values[s]) for s in states)
-        values = updated
-        if delta < TOLERANCE:
-            break
-    return policy, values, history
-
-
 def calculate_layout(size):
     """Fit the whole grid AND a sidebar inside the current display size."""
     w, h = size
@@ -145,7 +100,10 @@ def main():
 
     env = Environment()
     robot_img = pygame.image.load('robot.webp').convert_alpha()
-    policy, values, history = solve_policy_iteration(env)
+    states = sorted(STATES)
+    policy = {s: 'NORTH' for s in states if s not in TERMINAL_STATES}
+    values = {s: 0.0 for s in states}
+    history = []
     state = env.reset()
     start_state = state
     target_state = state
@@ -173,6 +131,7 @@ def main():
         nonlocal state, start_state, target_state, elapsed, moving
         nonlocal steps, cumulative, discounted, last_action, last_direction
         nonlocal last_reward, outcome, trail, episode_rest, episode
+        nonlocal values, policy
         state = env.reset()
         start_state = target_state = state
         elapsed = episode_rest = 0.0
@@ -184,6 +143,40 @@ def main():
         trail = [state]
         if reset_counter:
             episode = 1
+        
+        # Bellman expectation update for deterministic policy π:
+        # V_(k+1)(s) = Q_k(s, π(s))
+        for sweep in range(10000):
+            updated = values.copy()
+            for s in policy:
+                updated[s] = q_value(env, s, policy[s], values)
+            delta = max(abs(updated[s] - values[s]) for s in states)
+            values = updated
+            if delta < TOLERANCE:
+                break
+
+        # Greedy policy improvement: π_new(s) = argmax_a Q^π(s,a)
+        changes = 0
+        improved = policy.copy()
+        for s in policy:
+            scores = {a: q_value(env, s, a, values) for a in ACTIONS}
+            best = max(scores, key=scores.get)
+            improved[s] = best
+            changes += (best != policy[s])
+        policy = improved
+        history.append((sweep + 1, changes))
+        if changes == 0:
+            return 'break'
+
+        for _ in range(10000):
+            updated = values.copy()
+            for s in policy:
+                updated[s] = q_value(env, s, policy[s], values)
+            delta = max(abs(updated[s] - values[s]) for s in states)
+            values = updated
+            if delta < TOLERANCE:
+                break
+        return 'continue'
 
     while running:
         dt = min(clock.tick(FPS) / 1000.0, 0.05)
@@ -227,7 +220,9 @@ def main():
                 episode_rest += dt * speed * 5
                 if episode_rest >= 1.3:
                     episode += 1
-                    reset_episode()
+                    reset_result = reset_episode()
+                    if (reset_result == 'break'):
+                        break   
             else:
                 action = policy[state]
                 old = state
